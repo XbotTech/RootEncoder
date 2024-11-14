@@ -1,8 +1,8 @@
 plugins {
-  alias(libs.plugins.android.library)
-  alias(libs.plugins.jetbrains.kotlin)
+  id("com.android.library")
+  id("org.jetbrains.kotlin.android")
   id(libs.plugins.maven.publish.get().pluginId)
-  alias(libs.plugins.jetbrains.dokka)
+  id("org.jetbrains.dokka")
 }
 
 android {
@@ -53,6 +53,6 @@ dependencies {
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.junit)
   testImplementation(libs.mockito.kotlin)
-  implementation(project(":srt"))
-  api(project(":common"))
+  implementation(project(":RootEncoder:srt"))
+  api(project(":RootEncoder:common"))
 }
