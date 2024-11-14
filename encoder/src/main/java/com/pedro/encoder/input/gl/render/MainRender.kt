@@ -23,6 +23,7 @@ import android.view.Surface
 import androidx.annotation.RequiresApi
 import com.pedro.encoder.input.gl.FilterAction
 import com.pedro.encoder.input.gl.render.filters.BaseFilterRender
+import com.pedro.encoder.input.gl.render.filters.`object`.XbotGoWaterMarkFilterRender
 import com.pedro.encoder.utils.gl.AspectRatioMode
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -59,6 +60,17 @@ class MainRender {
   fun drawOffScreen() {
     cameraRender.draw()
     for (baseFilterRender in filterRenders) baseFilterRender.draw()
+  }
+
+  fun drawOffScreen(all: Boolean) {
+    cameraRender.draw()
+
+    for (baseFilterRender in filterRenders) {
+      if (baseFilterRender is XbotGoWaterMarkFilterRender) {
+        baseFilterRender.ignore = !all
+      }
+      baseFilterRender.draw()
+    }
   }
 
   fun drawScreen(width: Int, height: Int, mode: AspectRatioMode, rotation: Int,
