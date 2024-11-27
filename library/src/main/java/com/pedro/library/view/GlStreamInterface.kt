@@ -206,7 +206,7 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
     if (surfaceManager.isReady && mainRender.isReady()) {
       surfaceManager.makeCurrent()
       mainRender.updateFrame()
-      mainRender.drawOffScreen()
+      mainRender.drawOffScreen(forPreview = false)
       surfaceManager.swapBuffer()
     }
 
@@ -251,6 +251,13 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
       takePhotoCallback?.onTakePhoto(GlUtil.getBitmap(encoderWidth, encoderHeight))
       takePhotoCallback = null
       surfaceManagerPhoto.swapBuffer()
+    }
+
+    if (surfaceManager.isReady && mainRender.isReady()) {
+      surfaceManager.makeCurrent()
+      mainRender.updateFrame()
+      mainRender.drawOffScreen(forPreview = true)
+      surfaceManager.swapBuffer()
     }
     // render preview
     if (surfaceManagerPreview.isReady && mainRender.isReady() && !limitFps) {
