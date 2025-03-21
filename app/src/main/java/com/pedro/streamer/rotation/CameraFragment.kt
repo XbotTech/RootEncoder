@@ -30,11 +30,11 @@ import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import com.pedro.common.ConnectChecker
-import com.pedro.library.base.recording.RecordController
-import com.pedro.library.generic.GenericStream
 import com.pedro.encoder.input.sources.video.Camera1Source
 import com.pedro.encoder.input.sources.video.Camera2Source
 import com.pedro.extrasources.CameraXSource
+import com.pedro.library.base.recording.RecordController
+import com.pedro.library.generic.GenericStream
 import com.pedro.library.util.BitrateAdapter
 import com.pedro.streamer.R
 import com.pedro.streamer.utils.PathUtils
@@ -83,9 +83,9 @@ class CameraFragment: Fragment(), ConnectChecker {
   private lateinit var surfaceView: SurfaceView
   private lateinit var bStartStop: ImageView
   private lateinit var txtBitrate: TextView
-  private val width = 640
-  private val height = 480
-  private val vBitrate = 1200 * 1000
+  val width = 640
+  val height = 480
+  val vBitrate = 1200 * 1000
   private var rotation = 0
   private val sampleRate = 32000
   private val isStereo = true

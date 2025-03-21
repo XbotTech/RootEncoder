@@ -16,6 +16,7 @@
 
 package com.pedro.library.util.streamclient
 
+import com.pedro.common.socket.base.SocketType
 import com.pedro.srt.srt.SrtClient
 import com.pedro.srt.srt.packets.control.handshake.EncryptionType
 
@@ -26,6 +27,13 @@ class SrtStreamClient(
   private val srtClient: SrtClient,
   private val streamClientListener: StreamClientListener?
 ): StreamBaseClient() {
+
+  /**
+   * Set latency in micro. By default 120_000.
+   */
+  fun setLatency(latency: Int) {
+    srtClient.setLatency(latency)
+  }
 
   /**
    * Set passphrase for encrypt. Use empty value to disable it.
@@ -117,4 +125,11 @@ class SrtStreamClient(
    * Get the exponential factor used to calculate the bitrate. Default 1f
    */
   override fun getBitrateExponentialFactor() = srtClient.getBitrateExponentialFactor()
+
+  /**
+   * Set if you want use java.io or ktor socket
+   */
+  override fun setSocketType(type: SocketType) {
+    srtClient.socketType = type
+  }
 }

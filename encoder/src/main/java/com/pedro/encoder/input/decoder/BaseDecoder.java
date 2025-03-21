@@ -24,6 +24,8 @@ import android.os.Build;
 import android.util.Log;
 import android.view.Surface;
 
+import com.pedro.common.TimeUtils;
+
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -91,6 +93,16 @@ public abstract class BaseDecoder {
     stopDecoder();
     startTs = 0;
     extractor.release();
+  }
+
+  public void reset(Surface surface) {
+    boolean wasRunning = running;
+    stopDecoder(!wasRunning);
+    moveTo(0);
+    prepare(surface);
+    if (wasRunning) {
+      start();
+    }
   }
 
   protected boolean prepare(Surface surface) {
@@ -178,25 +190,19 @@ public abstract class BaseDecoder {
   private void decode() {
     if (startTs == 0) {
       moveTo(0); //make sure that we are on the start
-      startTs = System.nanoTime() / 1000;
+      startTs = TimeUtils.getCurrentTimeMicro();
     }
     long sleepTime = 0;
     while (running) {
       synchronized (sync) {
         if (pause.get()) continue;
         if (looped) {
-          double time = getTime();
-          if (time > 0) {
-            moveTo(0);
-            continue;
-          } else {
-            decoderInterface.onLoop();
-            looped = false;
-          }
+          decoderInterface.onLoop();
+          looped = false;
         }
         int inIndex = codec.dequeueInputBuffer(10000);
         int sampleSize;
-        long timeStamp = System.nanoTime() / 1000;
+        long timeStamp = TimeUtils.getCurrentTimeMicro();
         boolean finished = false;
         if (inIndex >= 0) {
           ByteBuffer input;
@@ -207,7 +213,7 @@ public abstract class BaseDecoder {
           }
           if (input == null) continue;
           sampleSize = extractor.readFrame(input);
-          long ts = System.nanoTime() / 1000 - startTs;
+          long ts = TimeUtils.getCurrentTimeMicro() - startTs;
           sleepTime = extractor.getSleepTime(ts);
           finished = !extractor.advance();
           if (finished) {
@@ -231,7 +237,6 @@ public abstract class BaseDecoder {
           codec.releaseOutputBuffer(outIndex, render && bufferInfo.size != 0);
           if (finished) {
             if (loopMode) {
-              moveTo(0);
               looped = true;
             } else {
               Log.i(TAG, "end of file");

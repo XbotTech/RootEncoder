@@ -33,6 +33,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.pedro.common.AudioCodec;
+import com.pedro.common.TimeUtils;
 import com.pedro.common.VideoCodec;
 import com.pedro.encoder.EncoderErrorCallback;
 import com.pedro.encoder.TimestampMode;
@@ -641,7 +642,7 @@ public abstract class Camera2Base {
     }
 
     private void startEncoders() {
-        long startTs = System.nanoTime() / 1000;
+        long startTs = TimeUtils.getCurrentTimeMicro();
         videoEncoder.start(startTs);
         if (differentRecordResolution) videoEncoderRecord.start(startTs);
         if (audioInitialized) audioEncoder.start(startTs);
@@ -857,6 +858,16 @@ public abstract class Camera2Base {
 
     public int getStreamHeight() {
         return videoEncoder.getHeight();
+    }
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    public List<String> physicalCamerasAvailable() {
+        return cameraManager.getPhysicalCamerasAvailable();
+    }
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    public void openPhysicalCamera(String id) {
+        cameraManager.openPhysicalCamera(id);
     }
 
     /**

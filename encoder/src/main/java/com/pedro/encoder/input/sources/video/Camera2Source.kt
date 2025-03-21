@@ -25,6 +25,8 @@ import android.util.Size
 import android.view.MotionEvent
 import androidx.annotation.RequiresApi
 import com.pedro.encoder.input.video.Camera2ApiManager
+import com.pedro.encoder.input.video.Camera2ApiManager.ImageCallback
+import com.pedro.encoder.input.video.CameraCallbacks
 import com.pedro.encoder.input.video.CameraHelper
 import com.pedro.encoder.input.video.facedetector.FaceDetectorCallback
 
@@ -207,4 +209,27 @@ class Camera2Source(context: Context): VideoSource() {
   }
 
   fun isAutoExposureEnabled() = camera.isAutoExposureEnabled
+
+  @JvmOverloads
+  fun addImageListener(format: Int, maxImages: Int, autoClose: Boolean = true, listener: ImageCallback) {
+    val w = if (rotation == 90 || rotation == 270) height else width
+    val h = if (rotation == 90 || rotation == 270) width else height
+    camera.addImageListener(w, h, format, maxImages, autoClose, listener)
+  }
+
+  fun removeImageListener() {
+    camera.removeImageListener()
+  }
+
+  @RequiresApi(Build.VERSION_CODES.P)
+  fun physicalCamerasAvailable() = camera.getPhysicalCamerasAvailable()
+
+  @RequiresApi(Build.VERSION_CODES.P)
+  fun openPhysicalCamera(id: String?) {
+    camera.openPhysicalCamera(id)
+  }
+
+  fun setCameraCallback(callbacks: CameraCallbacks?) {
+    camera.setCameraCallbacks(callbacks)
+  }
 }
