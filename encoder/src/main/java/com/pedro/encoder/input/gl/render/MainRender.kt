@@ -63,18 +63,6 @@ class MainRender {
     for (baseFilterRender in filterRenders) baseFilterRender.draw()
   }
 
-  fun drawOffScreen(forPreview: Boolean) {
-    cameraRender.draw()
-
-    for (baseFilterRender in filterRenders) {
-      // 如果是水印渲染，控制其 ignore 状态
-      if (baseFilterRender is XbotGoWaterMarkFilterRender) {
-        baseFilterRender.ignore = forPreview // 预览时忽略渲染水印
-      }
-      baseFilterRender.draw()
-    }
-  }
-
   fun drawScreen(width: Int, height: Int, mode: AspectRatioMode, rotation: Int,
     flipStreamVertical: Boolean, flipStreamHorizontal: Boolean) {
     screenRender.draw(width, height, mode, rotation, flipStreamVertical,
