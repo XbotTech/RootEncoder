@@ -919,6 +919,33 @@ public abstract class Camera2Base {
         return cameraManager.getMinExposure();
     }
 
+    /**
+     * @param mode value from CameraCharacteristics.AWB_MODE_*
+     */
+    public boolean enableAutoWhiteBalance(int mode) {
+        return cameraManager.enableAutoWhiteBalance(mode);
+    }
+
+    public void disableAutoWhiteBalance() {
+        cameraManager.disableAutoWhiteBalance();
+    }
+
+    public boolean isAutoWhiteBalanceEnabled() {
+        return cameraManager.isAutoWhiteBalanceEnabled();
+    }
+
+    public int getWhiteBalance() {
+        return cameraManager.getWhiteBalance();
+    }
+
+    public List<Integer> getAutoWhiteBalanceModesAvailable() {
+        return cameraManager.getAutoWhiteBalanceModesAvailable();
+    }
+
+    public boolean setColorCorrectionGains(float red, float greenEven, float greenOdd, float blue) {
+        return cameraManager.setColorCorrectionGains(red, greenEven, greenOdd, blue);
+    }
+
     public boolean tapToFocus(MotionEvent event) {
         return cameraManager.tapToFocus(event);
     }
