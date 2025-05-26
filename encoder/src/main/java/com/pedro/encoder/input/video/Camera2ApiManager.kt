@@ -183,12 +183,54 @@ class Camera2ApiManager(context: Context) : CameraDevice.StateCallback() {
     @Throws(IllegalStateException::class, Exception::class)
     private fun drawSurface(cameraDevice: CameraDevice, surfaces: List<Surface>): CaptureRequest {
         val builderInputSurface = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-        for (surface in surfaces) builderInputSurface.addTarget(surface)
+        for (surface in surfaces) {
+            builderInputSurface.addTarget(surface)
+        }
+
+        // 设置自动曝光
         builderInputSurface.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO)
-        val validFps = min(60, fps)
-        builderInputSurface.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(validFps, validFps))
+
+        //
+        val characteristics: CameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)
+
+        // 设置FPS，强制固定 FPS 可能导致抖动，使用设备支持的 FPS 范围（通过 CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES 获取）更可靠。
+        val bestRange = obtainFpsRange(characteristics)
+        builderInputSurface.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, bestRange)
+
+//        val validFps = min(60, fps)
+//        builderInputSurface.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(validFps, validFps))
+
+        // 3. 三星设备特殊配置
+        specialProcessForSamsung(builderInputSurface, characteristics)
+
         this.builderInputSurface = builderInputSurface
         return builderInputSurface.build()
+    }
+
+    private fun specialProcessForSamsung(builderInputSurface: CaptureRequest.Builder,
+                                         characteristics: CameraCharacteristics) {
+        if (Build.MANUFACTURER.equals("samsung", ignoreCase = true)) {
+            builderInputSurface.set(
+                CaptureRequest.CONTROL_SCENE_MODE,
+                CameraMetadata.CONTROL_SCENE_MODE_DISABLED
+            )
+
+            // 启用 OIS（如果支持）
+            if (characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION)?.contains(
+                    CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON) == true) {
+                builderInputSurface.set(
+                    CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE,
+                    CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON
+                )
+            }
+        }
+    }
+
+    private fun obtainFpsRange(characteristics: CameraCharacteristics): Range<Int> {
+        val fpsRange = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
+        val targetFps = 30 // 优先使用 30 FPS
+        val bestRange = fpsRange?.filter { it.lower >= 15 && it.upper >= targetFps }?.maxByOrNull { it.upper }
+        return bestRange ?: Range(targetFps, targetFps)
     }
 
     fun getSupportedFps(size: Size?, facing: Facing): List<Range<Int>> {
@@ -822,6 +864,7 @@ class Camera2ApiManager(context: Context) : CameraDevice.StateCallback() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onOpened(cameraDevice: CameraDevice) {
         this.cameraDevice = cameraDevice
         startPreview(cameraDevice)
