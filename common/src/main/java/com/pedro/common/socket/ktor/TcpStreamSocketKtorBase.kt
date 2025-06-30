@@ -11,7 +11,6 @@ import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.close
 import io.ktor.utils.io.readFully
 import io.ktor.utils.io.readUTF8Line
-import io.ktor.utils.io.writeByte
 import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.Dispatchers
 import java.net.InetAddress
