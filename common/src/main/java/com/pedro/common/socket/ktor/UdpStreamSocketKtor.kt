@@ -10,7 +10,6 @@ import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.isClosed
 import io.ktor.utils.io.core.ByteReadPacket
 import io.ktor.utils.io.core.readBytes
-import io.ktor.utils.io.core.remaining
 import kotlinx.coroutines.Dispatchers
 import java.net.ConnectException
 import java.net.InetAddress
