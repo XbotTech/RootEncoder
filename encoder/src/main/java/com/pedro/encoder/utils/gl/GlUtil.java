@@ -24,9 +24,10 @@ import android.opengl.EGL14;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Build;
-import android.util.Log;
 
 import androidx.annotation.RequiresApi;
+
+import com.pedro.encoder.BuildConfig;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -127,6 +128,7 @@ public class GlUtil {
   }
 
   public static void checkGlError(String op) {
+    if (!BuildConfig.DEBUG) return;
     int error = GLES20.glGetError();
     if (error != GLES20.GL_NO_ERROR) {
       throw new RuntimeException(op + ". GL error: " + error);
@@ -134,6 +136,7 @@ public class GlUtil {
   }
 
   public static void checkEglError(String msg) {
+    if (!BuildConfig.DEBUG) return;
     int error = EGL14.eglGetError();
     if (error != EGL14.EGL_SUCCESS) {
       throw new RuntimeException(msg + ". EGL error: " + error);
@@ -163,7 +166,9 @@ public class GlUtil {
   }
 
   public static void disableResources(int... vertex) {
-    for (int v: vertex) GLES20.glDisableVertexAttribArray(v);
+    for (int v: vertex) {
+      if (v >= 0 && v < GLES20.GL_MAX_VERTEX_ATTRIBS) GLES20.glDisableVertexAttribArray(v);
+    }
     GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
     GLES20.glUseProgram(0);

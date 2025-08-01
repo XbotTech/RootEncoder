@@ -29,6 +29,7 @@ import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 
+import com.pedro.common.FpsUtils;
 import com.pedro.common.TimeUtils;
 import com.pedro.encoder.Frame;
 import com.pedro.encoder.input.video.facedetector.FaceDetectorCallback;
@@ -50,6 +51,7 @@ import java.util.List;
  * <p>
  * If you want use all resolutions. You can use libYuv for resize images in OnPreviewFrame:
  * https://chromium.googlesource.com/libyuv/libyuv/
+ * @noinspection deprecation
  */
 
 public class Camera1ApiManager implements Camera.PreviewCallback, Camera.FaceDetectionListener {
@@ -67,7 +69,7 @@ public class Camera1ApiManager implements Camera.PreviewCallback, Camera.FaceDet
   private int cameraSelect;
   private CameraHelper.Facing facing = CameraHelper.Facing.BACK;
   private boolean isPortrait = false;
-  private Context context;
+  private final Context context;
 
   //default parameters for camera
   private int width = 640;
@@ -187,7 +189,7 @@ public class Camera1ApiManager implements Camera.PreviewCallback, Camera.FaceDet
       Camera.Parameters parameters = camera.getParameters();
       parameters.setPreviewSize(width, height);
       parameters.setPreviewFormat(imageFormat);
-      int[] range = adaptFpsRange(fps, parameters.getSupportedPreviewFpsRange());
+      int[] range = FpsUtils.INSTANCE.adaptFpsRange(fps, parameters.getSupportedPreviewFpsRange());
       Log.i(TAG, "fps: " + range[0] + " - " + range[1]);
       parameters.setPreviewFpsRange(range[0], range[1]);
 
@@ -368,27 +370,6 @@ public class Camera1ApiManager implements Camera.PreviewCallback, Camera.FaceDet
     return running;
   }
 
-  private int[] adaptFpsRange(int expectedFps, List<int[]> fpsRanges) {
-    expectedFps *= 1000;
-    int[] closestRange = fpsRanges.get(0);
-    int measure = Math.abs(closestRange[0] - expectedFps) + Math.abs(closestRange[1] - expectedFps);
-    for (int[] range : fpsRanges) {
-      if (range[0] <= expectedFps && range[1] >= expectedFps) {
-        int curMeasure = Math.abs(((range[0] + range[1]) / 2) - expectedFps);
-        if (curMeasure < measure) {
-          closestRange = range;
-          measure = curMeasure;
-        } else if (curMeasure == measure) {
-          if (Math.abs(range[0] - expectedFps) < Math.abs(closestRange[1] - expectedFps)) {
-            closestRange = range;
-            measure = curMeasure;
-          }
-        }
-      }
-    }
-    return closestRange;
-  }
-
   @Override
   public void onPreviewFrame(byte[] data, Camera camera) {
     long timeStamp = TimeUtils.getCurrentTimeMicro();
@@ -409,7 +390,7 @@ public class Camera1ApiManager implements Camera.PreviewCallback, Camera.FaceDet
   }
 
   /**
-   * See: https://developer.android.com/reference/android/graphics/ImageFormat.html to know name of
+   * See: <a href="https://developer.android.com/reference/android/graphics/ImageFormat.html">ImageFormat</a> to know name of
    * constant values
    * Example: 842094169 -> YV12, 17 -> NV21
    */
@@ -510,7 +491,6 @@ public class Camera1ApiManager implements Camera.PreviewCallback, Camera.FaceDet
       }
       stop();
       start();
-      return;
     }
   }
 
@@ -571,7 +551,7 @@ public class Camera1ApiManager implements Camera.PreviewCallback, Camera.FaceDet
   }
 
   /**
-   * @required: <uses-permission android:name="android.permission.FLASHLIGHT"/>
+   * &#064;required:  <uses-permission android:name="android.permission.FLASHLIGHT"/>
    */
   public void disableLantern() {
     if (camera != null) {
@@ -776,16 +756,16 @@ public class Camera1ApiManager implements Camera.PreviewCallback, Camera.FaceDet
     return new Rect(left, top, left + focusAreaSize, top + focusAreaSize);
   }
 
-  private int clamp(int touchCoordinateInCameraReper, int focusAreaSize) {
+  private int clamp(int touchCoordinate, int focusAreaSize) {
     int result;
-    if (Math.abs(touchCoordinateInCameraReper) + focusAreaSize / 2 > 1000){
-      if (touchCoordinateInCameraReper > 0){
+    if (Math.abs(touchCoordinate) + focusAreaSize / 2 > 1000) {
+      if (touchCoordinate > 0) {
         result = 1000 - focusAreaSize / 2;
       } else {
         result = -1000 + focusAreaSize / 2;
       }
-    } else{
-      result = touchCoordinateInCameraReper - focusAreaSize / 2;
+    } else {
+      result = touchCoordinate - focusAreaSize / 2;
     }
     return result;
   }

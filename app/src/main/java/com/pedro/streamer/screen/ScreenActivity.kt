@@ -27,10 +27,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.pedro.common.ConnectChecker
-import com.pedro.library.base.recording.RecordController
-import com.pedro.encoder.input.sources.audio.MixAudioSource
 import com.pedro.encoder.input.sources.audio.InternalAudioSource
 import com.pedro.encoder.input.sources.audio.MicrophoneSource
+import com.pedro.encoder.input.sources.audio.MixAudioSource
+import com.pedro.library.base.recording.RecordController
 import com.pedro.streamer.R
 import com.pedro.streamer.utils.fitAppPadding
 import com.pedro.streamer.utils.toast
@@ -198,7 +198,7 @@ class ScreenActivity : AppCompatActivity(), ConnectChecker {
       screenService.setCallback(null)
       activityResultContract.unregister()
       //stop service only if no streaming or recording
-      stopService(Intent(this, ScreenService::class.java))
+      if (isFinishing) stopService(Intent(this, ScreenService::class.java))
     }
   }
 

@@ -30,6 +30,7 @@ import com.pedro.encoder.input.gl.SurfaceManager
 import com.pedro.encoder.input.gl.render.MainRender
 import com.pedro.encoder.input.gl.render.filters.BaseFilterRender
 import com.pedro.encoder.input.gl.render.filters.NoFilterRender
+import com.pedro.encoder.input.sources.OrientationConfig
 import com.pedro.encoder.input.sources.OrientationForced
 import com.pedro.encoder.input.video.CameraHelper
 import com.pedro.encoder.input.video.FpsLimiter
@@ -42,6 +43,7 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.max
 
 
 /**
@@ -171,14 +173,16 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
     executor?.shutdownNow()
     executor = null
     executor = newSingleThreadExecutor(threadQueue)
+    val width = max(encoderWidth, encoderRecordWidth)
+    val height = max(encoderHeight, encoderRecordHeight)
     surfaceManager.release()
     surfaceManager.eglSetup()
     surfaceManagerPhoto.release()
-    surfaceManagerPhoto.eglSetup(encoderWidth, encoderHeight, surfaceManager)
+    surfaceManagerPhoto.eglSetup(width, height, surfaceManager)
     sensorRotationManager.start()
     executor?.secureSubmit {
       surfaceManager.makeCurrent()
-      mainRender.initGl(context, encoderWidth, encoderHeight, encoderWidth, encoderHeight)
+      mainRender.initGl(context, width, height, width, height)
       running.set(true)
       mainRender.getSurfaceTexture().setOnFrameAvailableListener(this)
       forceRender.start {
@@ -212,23 +216,25 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
     val limitFps = fpsLimiter.limitFPS()
     if (!forced) forceRender.frameAvailable()
 
-    if (surfaceManager.isReady && mainRender.isReady()) {
-      if (surfaceManager.makeCurrent()) {
-        mainRender.updateFrame()
-        mainRender.drawSource()
-        surfaceManager.swapBuffer()
-      }
-    }
-
     if (!filterQueue.isEmpty() && mainRender.isReady()) {
       try {
-        val filter = filterQueue.take()
-        mainRender.setFilterAction(filter.filterAction, filter.position, filter.baseFilterRender)
-      } catch (e: InterruptedException) {
+        if (surfaceManager.makeCurrent()) {
+          val filter = filterQueue.take()
+          mainRender.setFilterAction(filter.filterAction, filter.position, filter.baseFilterRender)
+        }
+      } catch (_: InterruptedException) {
         Thread.currentThread().interrupt()
         return
       }
     }
+
+    if (surfaceManager.isReady && mainRender.isReady()) {
+      if (!surfaceManager.makeCurrent()) return
+      mainRender.updateFrame()
+      mainRender.drawSource()
+      surfaceManager.swapBuffer()
+    }
+
     val orientation = when (orientationForced) {
       OrientationForced.PORTRAIT -> true
       OrientationForced.LANDSCAPE -> false
@@ -295,6 +301,24 @@ class GlStreamInterface(private val context: Context): OnFrameAvailableListener,
         draw(false)
       } catch (e: RuntimeException) {
         renderErrorCallback?.onRenderError(e) ?: throw e
+      }
+    }
+  }
+
+  fun setOrientationConfig(orientationConfig: OrientationConfig) {
+    when (orientationConfig.forced) {
+      OrientationForced.PORTRAIT, OrientationForced.LANDSCAPE -> {
+        forceOrientation(orientationConfig.forced)
+      }
+      OrientationForced.NONE -> {
+        if (orientationConfig.isPortrait == null && orientationConfig.cameraOrientation == null) {
+          forceOrientation(orientationConfig.forced)
+        } else {
+          orientationConfig.isPortrait?.let { setIsPortrait(it) }
+          orientationConfig.cameraOrientation?.let { setCameraOrientation(it) }
+          shouldHandleOrientation = false
+          this.orientationForced = orientationConfig.forced
+        }
       }
     }
   }

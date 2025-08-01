@@ -29,6 +29,7 @@ import com.pedro.encoder.input.video.Camera2ApiManager
 import com.pedro.encoder.input.video.Camera2ApiManager.ImageCallback
 import com.pedro.encoder.input.video.CameraCallbacks
 import com.pedro.encoder.input.video.CameraHelper
+import com.pedro.encoder.input.video.FrameCapturedCallback
 import com.pedro.encoder.input.video.facedetector.FaceDetectorCallback
 
 /**
@@ -167,6 +168,10 @@ open class Camera2Source(context: Context): VideoSource() {
     return if (isRunning()) camera.enableFaceDetection(callback) else false
   }
 
+  fun enableFrameCaptureCallback(frameCapturedCallback: FrameCapturedCallback?) {
+    camera.enableFrameCaptureCallback(frameCapturedCallback)
+  }
+
   fun disableFaceDetection() {
     if (isRunning()) camera.disableFaceDetection()
   }
@@ -254,5 +259,14 @@ open class Camera2Source(context: Context): VideoSource() {
   @JvmOverloads
   fun getMaxSupportedFps(size: Size?, facing: CameraHelper.Facing = getCameraFacing()): Int {
     return camera.getSupportedFps(size, facing).maxOfOrNull { it.upper } ?: 30
+  }
+
+  /**
+   * Set the required resolution for the camera.
+   * Must be called before prepareVideo or changeVideoSource. Otherwise it will be ignored.
+   */
+  fun setRequiredResolution(size: Size?) {
+    size?.let { checkResolutionSupported(it.width, it.height) }
+    camera.setRequiredResolution(size)
   }
 }

@@ -8,7 +8,6 @@ import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
-import io.ktor.utils.io.close
 import io.ktor.utils.io.readFully
 import io.ktor.utils.io.readUTF8Line
 import io.ktor.utils.io.writeByte
@@ -38,7 +37,7 @@ abstract class TcpStreamSocketKtorBase(
     }
 
     override suspend fun close() {
-        runCatching { output?.close() }
+        runCatching { output?.flushAndClose() }
         runCatching {
             address = null
             input = null
@@ -53,7 +52,7 @@ abstract class TcpStreamSocketKtorBase(
     }
 
     override suspend fun write(bytes: ByteArray, offset: Int, size: Int) {
-        output?.writeFully(bytes, offset, size)
+        output?.writeFully(bytes, offset, offset + size)
     }
 
     override suspend fun write(b: Int) {

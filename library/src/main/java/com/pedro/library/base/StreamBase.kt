@@ -29,6 +29,7 @@ import androidx.annotation.RequiresApi
 import com.pedro.common.AudioCodec
 import com.pedro.common.TimeUtils
 import com.pedro.common.VideoCodec
+import com.pedro.common.tryClear
 import com.pedro.encoder.CodecErrorCallback
 import com.pedro.encoder.Frame
 import com.pedro.encoder.TimestampMode
@@ -140,7 +141,7 @@ abstract class StreamBase(
       val isPortrait = rotation == 90 || rotation == 270
       glInterface.setIsPortrait(isPortrait)
       glInterface.setCameraOrientation(if (rotation == 0) 270 else rotation - 90)
-      glInterface.forceOrientation(videoSource.getOrientationConfig())
+      glInterface.setOrientationConfig(videoSource.getOrientationConfig())
       if (differentRecordResolution) {
         val result = videoEncoderRecord.prepareVideoEncoder(recordWidth, recordHeight, fps, recordBitrate, rotation,
           iFrameInterval, FormatVideoEncoder.SURFACE, profile, level)
@@ -257,9 +258,13 @@ abstract class StreamBase(
    *
    * Must be called after prepareVideo and prepareAudio.
    */
-  fun startRecord(path: String, listener: RecordController.Listener) {
+  @JvmOverloads
+  fun startRecord(path: String, tracks: RecordController.RecordTracks? = null, listener: RecordController.Listener) {
     if (isRecording) throw IllegalStateException("Record already started, stopRecord before startRecord again")
-    recordController.startRecord(path, listener)
+    val usedTracks = tracks ?: if (videoSource is NoVideoSource) RecordController.RecordTracks.AUDIO
+        else if (audioSource is NoAudioSource) RecordController.RecordTracks.VIDEO
+        else RecordController.RecordTracks.ALL
+    recordController.startRecord(path, listener, usedTracks)
     if (!isStreaming) startSources()
     else {
       videoEncoder.requestKeyframe()
@@ -382,8 +387,9 @@ abstract class StreamBase(
     }
     videoSource.stop()
     videoSource.release()
+    glInterface.surfaceTexture.tryClear()
     if (wasRunning) source.start(glInterface.surfaceTexture)
-    glInterface.forceOrientation(source.getOrientationConfig())
+    glInterface.setOrientationConfig(source.getOrientationConfig())
     videoSource = source
   }
 
@@ -507,6 +513,7 @@ abstract class StreamBase(
     stopSources()
     videoSource.release()
     audioSource.release()
+    glInterface.surfaceTexture.tryClear()
   }
 
   /**
@@ -550,8 +557,7 @@ abstract class StreamBase(
     }
 
     override fun onAudioFormat(mediaFormat: MediaFormat) {
-      val isOnlyAudio = videoSource is NoVideoSource
-      recordController.setAudioFormat(mediaFormat, isOnlyAudio)
+      recordController.setAudioFormat(mediaFormat)
     }
   }
 
@@ -568,8 +574,7 @@ abstract class StreamBase(
 
     override fun onVideoFormat(mediaFormat: MediaFormat) {
       if (!differentRecordResolution) {
-        val isOnlyVideo = audioSource is NoAudioSource
-        recordController.setVideoFormat(mediaFormat, isOnlyVideo)
+        recordController.setVideoFormat(mediaFormat)
       }
     }
   }
@@ -584,7 +589,7 @@ abstract class StreamBase(
 
     override fun onVideoFormat(mediaFormat: MediaFormat) {
       val isOnlyVideo = audioSource is NoAudioSource
-      recordController.setVideoFormat(mediaFormat, isOnlyVideo)
+      recordController.setVideoFormat(mediaFormat)
     }
   }
 
