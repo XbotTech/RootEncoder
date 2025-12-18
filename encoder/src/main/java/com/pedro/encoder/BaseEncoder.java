@@ -133,9 +133,13 @@ public abstract class BaseEncoder implements EncoderCallback {
   protected abstract void stopImp();
 
   protected void fixTimeStamp(MediaCodec.BufferInfo info) {
-    if (oldTimeStamp > info.presentationTimeUs) {
-      final long currentTs = TimeUtils.getCurrentTimeMicro() - presentTimeUs;
-      info.presentationTimeUs = Math.max(currentTs, oldTimeStamp + 1);
+   // 1. 修改判断条件：使用 <=，把“相等”的情况也拦截下来
+    if (info.presentationTimeUs <= oldTimeStamp) {
+        
+        // 2. 移除 TimeUtils 依赖：直接在上一帧的基础上 + 10us (或者 1us)
+        // 只要比上一帧大，MPEG4Writer 就不会崩。
+        // 音频一帧通常是 20000us 左右，这里偷 10us 肉耳根本听不出来
+        info.presentationTimeUs = oldTimeStamp + 10; 
     }
     oldTimeStamp = info.presentationTimeUs;
   }
